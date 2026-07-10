@@ -69,7 +69,7 @@ Traced `renderTerminal` usages to find where scan output actually gets built (`s
 ---
 
 ## Pull Request
-**PR Link:** [add link]
+**PR Link:** [https://github.com/KryptosAI/mcp-observatory/pull/260]
 **Status:** Awaiting review
 
 Description submitted: adds the summary line described above, no schema changes, notes that the issue's `--json` requirement doesn't apply since this CLI has no `--json` output format.
