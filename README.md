@@ -1,158 +1,89 @@
-# Contribution [#]: [Issue Title]
-
-**Contribution Number:** [1 / 2 / 3]  
-**Student:** [Your Name]  
-**Issue:** [GitHub issue link]  
-**Status:** [Phase I / Phase II / Phase III / Phase IV] [In Progress / Complete]
+# Contribution 2: Add scan result summary line to MCP Observatory
+**Contribution Number:** 2
+**Student:** Andy Cheng
+**Issue:** https://github.com/KryptosAI/mcp-observatory/issues/256
+**Status:** Phase IV Complete
 
 ---
 
 ## Why I Chose This Issue
-
-[1-2 paragraphs explaining why this issue interests you, how it matches your skills/learning goals, what you hope to learn]
+It was tagged "good first issue" on a real, active open-source project, which felt like a good way to practice the actual mechanics of contributing — forking, branching, testing, opening a PR — on something with real users instead of a toy repo. The scope was also clear: add a summary line at the end of `scan` output showing pass/fail/warning counts, so I had a concrete spec instead of an open-ended problem.
 
 ---
 
 ## Understanding the Issue
 
-### Problem Description
+**Problem:** `mcp-observatory scan` checks multiple MCP servers but only prints results per-server — there's no single line telling you the overall breakdown. With many servers configured, you have to read every block to know the overall health.
 
-[In your own words, what's broken or missing?]
+**Expected behavior:** After all servers are checked, print a divider and a color-coded line like:
+```
+─────────────────────────────
+3 servers scanned: 1 passed, 1 failed, 1 warnings
+```
+Each server is classified by its worst result: any fail → "failed," no fails but a partial/flaky check → "warnings," else "passed."
 
-### Expected Behavior
+**Current behavior:** There's an aggregate pass/fail count mixed into other output, but no dedicated summary line and no "warnings" category at all.
 
-[What should happen?]
-
-### Current Behavior
-
-[What actually happens?]
-
-### Affected Components
-
-[Which parts of the codebase are involved?]
+**Affected files:** `src/reporters/terminal.ts` (formatting logic) and `src/commands/scan.ts` (where `runScan` loops over servers and prints results).
 
 ---
 
 ## Reproduction Process
+Cloned the repo and ran `npm install`. Hit a snag where `npm run build` fails on three pre-existing TypeScript errors in unrelated files (`runtime-profile.ts`, `diff.ts`, `validate.ts`), so `dist/` never gets built. Worked around it by running the CLI straight from source with `npx tsx src/cli.ts`.
 
-### Environment Setup
-
-[Notes on setting up your local development environment - challenges you faced, how you solved them]
-
-### Steps to Reproduce
-
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
-
-### Reproduction Evidence
-
-- **Commit showing reproduction:** [Link to commit in your fork]
-- **Screenshots/logs:** [If applicable]
-- **My findings:** [What you discovered during reproduction]
+To reproduce: created a local `.mcp.json` with two test servers (filesystem + everything), ran `scan`, and confirmed both servers got checked individually with no summary line at the end — matching the gap in the issue.
 
 ---
 
 ## Solution Approach
+This was a missing feature, not a bug — `runScan` already collects every result into an `artifacts` array during its loop, it just never did anything with it afterward. `terminal.ts` already had the color helpers (`ANSI`, `co()`), so I followed its existing style rather than inventing something new.
 
-### Analysis
+**Plan:**
+1. Add `classifyServerStatus()` to `terminal.ts` — classify one server by its worst check.
+2. Add `computeScanSummary()` — count servers into passed/failed/warnings.
+3. Add `renderScanSummaryTerminal()` — build the final divider + colored line.
+4. In `scan.ts`, call `renderScanSummaryTerminal()` once after the per-server loop.
 
-[Your analysis of the root cause - what's causing the issue?]
-
-### Proposed Solution
-
-[High-level description of your fix approach]
-
-### Implementation Plan
-
-Using UMPIRE framework (adapted):
-
-**Understand:** [Restate the problem]
-
-**Match:** [What similar patterns/solutions exist in the codebase?]
-
-**Plan:** [Step-by-step implementation plan]
-1. [Modify file X to do Y]
-2. [Add function Z]
-3. [Update tests]
-
-**Implement:** [Link to your branch/commits as you work]
-
-**Review:** [Self-review checklist - does it follow the project's contribution guidelines?]
-
-**Evaluate:** [How will you verify it works?]
+Kept the diff purely additive — no existing lines touched.
 
 ---
 
 ## Testing Strategy
-
-### Unit Tests
-
-- [ ] Test case 1: [Description]
-- [ ] Test case 2: [Description]
-- [ ] Test case 3: [Description]
-
-### Integration Tests
-
-- [ ] Integration scenario 1
-- [ ] Integration scenario 2
-
-### Manual Testing
-
-[What you tested manually and results]
+- `npm test` — 576/576 passing, no regressions
+- `npm run lint` / `npm run typecheck` — clean aside from pre-existing errors in files I never touched
+- `npm run smoke` — passed, fixture server scored 92/100
+- **Manual:** built a local `.mcp.json` with two real servers and confirmed the summary line rendered correctly, colors and all:
+```
+─────────────────────────────
+2 servers scanned: 0 passed, 0 failed, 2 warnings
+```
 
 ---
 
 ## Implementation Notes
+Traced `renderTerminal` usages to find where scan output actually gets built (`scan.ts`), then added the three new functions to `terminal.ts` and one call site in `scan.ts`. Biggest snag was figuring out the real CLI entry point — `package.json`'s `bin` pointed at a `dist/` file that didn't exist because the build was already broken for unrelated reasons. Also had to fork instead of pushing directly since I'm not a repo collaborator.
 
-### Week [X] Progress
-
-[What you built this week, challenges faced, decisions made]
-
-### Week [Y] Progress
-
-[Continue documenting as you work]
-
-### Code Changes
-
-- **Files modified:** [List]
-- **Key commits:** [Links to important commits]
-- **Approach decisions:** [Why you chose certain approaches]
+**Files modified:** `src/reporters/terminal.ts`, `src/commands/scan.ts`
+**Key commit:** "Add scan result summary line (closes #256)" on branch `add-scan-summary`
 
 ---
 
 ## Pull Request
+**PR Link:** [add link]
+**Status:** Awaiting review
 
-**PR Link:** [GitHub PR URL when submitted]
-
-**PR Description:** [Draft or final PR description - much of the content above can be adapted]
-
-**Maintainer Feedback:**
-- [Date]: [Summary of feedback received]
-- [Date]: [How you addressed it]
-
-**Status:** [Awaiting review / Iterating / Approved / Merged]
+Description submitted: adds the summary line described above, no schema changes, notes that the issue's `--json` requirement doesn't apply since this CLI has no `--json` output format.
 
 ---
 
 ## Learnings & Reflections
+Got real practice navigating an unfamiliar codebase by grepping for function usage instead of guessing file structure, and learned to tell the difference between errors I caused versus pre-existing project issues — important so you don't panic-fix things that aren't yours to fix. The trickiest part was the broken build system, which I worked around by running from source directly instead.
 
-### Technical Skills Gained
-
-[What you learned technically]
-
-### Challenges Overcome
-
-[What was hard and how you solved it]
-
-### What I'd Do Differently Next Time
-
-[Reflection on your process]
+Next time, I'd check whether the project's build/dev scripts actually work *before* diving into edits, and I'd add a small dedicated test for the new functions even though the existing suite didn't require it.
 
 ---
 
 ## Resources Used
-
-- [Link to helpful documentation]
-- [Tutorial or Stack Overflow post that helped]
-- [GitHub issues or discussions that helped]
+- [MCP Observatory repo](https://github.com/KryptosAI/mcp-observatory)
+- [Issue #256](https://github.com/KryptosAI/mcp-observatory/issues/256)
+- Project's `CONTRIBUTING.md` for the validation checklist
