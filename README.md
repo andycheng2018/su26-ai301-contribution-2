@@ -1,8 +1,8 @@
 # Contribution 2: Add scan result summary line to MCP Observatory
 **Contribution Number:** 2
-**Student:** Andy Cheng
-**Issue:** https://github.com/KryptosAI/mcp-observatory/issues/256
-**Status:** Phase IV Complete
+**Student:** Andy Cheng  
+**Issue:** https://github.com/KryptosAI/mcp-observatory/issues/256  
+**Status:** Phase IV Complete  
 
 ---
 
